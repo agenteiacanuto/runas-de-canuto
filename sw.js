@@ -1,5 +1,5 @@
 // Runas de Canuto: cache para jogar offline. Mude VERSION a cada atualização do jogo.
-const VERSION = 'runas-v6';
+const VERSION = 'runas-v7';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
