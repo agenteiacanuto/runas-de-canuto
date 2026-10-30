@@ -365,9 +365,10 @@ const LEVELS = [
   { name: 'Winchester', region: 2, moves: 26, colors: 6, stars: [5000, 8500, 12000],
     fact: 'A capital de Canuto, onde ele seria sepultado em 1035.',
     layout: ['1......1', '11....11', '..LLLL..', '..B11B..', '..B11B..', '..LLLL..', '11....11', '1......1'] },
-  { name: 'Nidaros', region: 3, moves: 32, colors: 6, collect: { 5: 15 }, stars: [5000, 9000, 13000],
+  { name: 'Nidaros', region: 3, moves: 32, colors: 5, collect: { 4: 15 }, stars: [5000, 9000, 13000], assist: true,
     fact: '1028: Canuto toma a Noruega e se torna rei do Mar do Norte.',
-    layout: ['1......1', '........', '..LBBL..', '..1221..', '..1221..', '..LBBL..', '........', '1......1'] }
+    specials: [[1, 2, 'b'], [1, 5, 'b'], [6, 1, 'h'], [6, 6, 'v'], [7, 3, 'o']],
+    layout: ['........', '........', '..LBBL..', '..1221..', '..1221..', '..LBBL..', '........', '........'] }
 ];
 
 /* ================= Storage ================= */
@@ -1059,7 +1060,12 @@ function applyGravity() {
       if (p) { if (r !== w) { grid[w][c] = p; grid[r][c] = null; } w--; }
     }
     const empties = w + 1;
-    for (let r = w; r >= 0; r--) grid[r][c] = newPiece(randType(), c, r - empties);
+    for (let r = w; r >= 0; r--) {
+      let t = randType();
+      const below = grid[r + 1] && grid[r + 1][c];
+      if (L.assist && below && below.t >= 0 && Math.random() < .3) t = below.t;
+      grid[r][c] = newPiece(t, c, r - empties);
+    }
     for (let r = 0; r < N; r++) {
       const p = grid[r][c];
       if (p.y !== r) { const d = r - p.y; ps.push(tween(p, { y: r }, 150 + Math.sqrt(d) * 105, easeFall)); }
@@ -1211,6 +1217,7 @@ function setupLevel(i) {
     if (ch === '2' || ch === 'C') ice[r][c] = 2;
     if (ch === 'L' || ch === 'B' || ch === 'C') grid[r][c].lock = true;
   }));
+  (L.specials || []).forEach(([r, c, sp]) => { const p = grid[r][c]; if (p && !p.lock) { p.sp = sp; if (sp === 'o') p.t = -1; } });
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     if (ice[r][c] > 0) game.iceLeft++;
     if (grid[r][c].lock) game.locksLeft++;
@@ -1456,7 +1463,8 @@ function startLevel(i) {
   buildGoalsHUD(); resize(true); updateHUD();
   const tip = i === 0 ? '<p class="note">Deslize uma peça para trocá-la com a vizinha e alinhe 3 ou mais iguais. Você também pode tocar em duas peças vizinhas.</p>'
     : (L.layout && L.layout.join('').includes('L') && !LEVELS.slice(0, i).some(l => l.layout && l.layout.join('').includes('L')))
-      ? '<p class="note">Peças acorrentadas não se movem. Combine-as ou atinja-as com uma runa para soltar a corrente.</p>' : '';
+      ? '<p class="note">Peças acorrentadas não se movem. Combine-as ou atinja-as com uma runa para soltar a corrente.</p>'
+      : (L.specials ? '<p class="note">Os deuses enviaram runas especiais para a batalha final. Troque-as perto das correntes e do gelo para explodir tudo.</p>' : '');
   showPanel(
     `<p class="eyebrow">${REGIONS[L.region]} · Fase ${i + 1}</p><h2>${L.name}</h2><p class="fact">${L.fact}</p>
      <ul class="goal-list">${goalLines()}</ul><p class="note">${L.moves} jogadas</p>${tip}`,
